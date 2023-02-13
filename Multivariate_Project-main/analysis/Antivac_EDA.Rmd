@@ -1,0 +1,309 @@
+---
+title: "Anti_vac Exploratory Data Analysis"
+output: pdf_document
+date: "2022-09-10"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+```{r}
+library(tidyverse)
+library(here)
+library(DataExplorer)
+library(psych)
+library(corrplot)
+```
+
+JL: From the original file antivac.csv, I created a new file antivac_renamed.csv, in which I manually shortened the variable names. For original variable names/survey items pls refer to the original dataset
+
+```{r}
+antivax <- read.csv(here("data", "antivac_renamed.csv"))
+```
+
+## Data cleaning 
+
+```{r}
+antivax <- antivax %>%
+  select(- Collector.ID, -End_Date, -Consent)
+```
+
+```{r}
+# renaming categorical labels 
+
+antivax <- antivax %>%
+  mutate(Highest_Education = case_when(
+    Highest_Education == "Associates Degree (2 year college/university degree)" ~ "Associate_Degree",
+    Highest_Education == "Bachelor Degree (4 year college/university degree)" ~ "Bachelor_Degree",
+    Highest_Education == "Bachelor Degree (4 year college/university degree)" ~ "Bachelor_Degree",
+    Highest_Education %in% c("Elementary school (grade level 1-8)", "No formal schooling") ~ "Elementary_or_less",
+    Highest_Education == "High school (grade level 9-12/13)" ~ "High_school",
+    Highest_Education == "Master's Degree" ~ "Master_Degree",
+    Highest_Education == "Professional/Doctoral Degree (PhD, MD, DC etc..)" ~ "Professional_Degree"
+  ))
+
+antivax <- antivax %>%
+  mutate(SM_influence = case_when(
+    SM_influence == "I have not seen anything about vaccines on social media" ~ "Not_seen",
+    SM_influence == "Influenced my opinion on vaccines (vaccines are better then I thought previously)" ~ "Influenced_better",
+    SM_influence == "Influenced my opinion on vaccines (vaccines are worse then I thought previously)" ~ "Influenced_worse",
+    SM_influence == "NOT influenced my opinion on vaccines" ~ "No_influence"
+  ))
+
+rename <- function(variable){
+  variable <- ifelse(variable == "I believe this is NOT true", "False",
+                     ifelse(variable == "I believe this is true", "True", "Unsure"))
+  return(variable)
+}
+
+antivax[which(colnames(antivax) == "MMR_autism"):which(colnames(antivax) == "Protect_immunocompromised")]<- lapply(antivax[which(colnames(antivax) == "MMR_autism"):which(colnames(antivax) == "Protect_immunocompromised")], rename)
+```
+
+```{r}
+# write.csv(antivax, here("data", "antivax_clean.csv"))
+```
+
+## Visualization 
+
+```{r}
+antivax_clean <- read.csv(here("data", "antivax_clean.csv"))
+```
+
+```{r message=F}
+plot_bar(antivax_clean,
+         ncol = 2)
+```
+
+## Converting outcome variable 
+
+```{r}
+correct_response <- c(F, F, F, F, F, F, T, T, T, T, T, T)
+```
+
+```{r}
+score_convert <-function(variable, key){
+  variable <- ifelse(variable == "True", 2,
+                     ifelse(variable == "False", 0, 1))
+  if (!key){
+    variable <- 2-variable # reverse for items that have F as correct answer
+  }
+  
+  return(variable)
+}
+
+```
+
+```{r}
+
+idx = 1
+
+for (x in c(which(colnames(antivax_clean) == "MMR_autism"):which(colnames(antivax_clean) == "Protect_immunocompromised"))){
+  antivax_clean[x] <- lapply(antivax_clean[x], score_convert, correct_response[idx])
+  idx = idx + 1
+}
+```
+
+## Looking at outcome variable 
+
+```{r }
+cormatrix <- cor(antivax_clean[which(colnames(antivax_clean) == "MMR_autism"):which(colnames(antivax_clean) == "Protect_immunocompromised")])
+
+corrplot(cormatrix, method="color", tl.cex = .6, number.font = .4)
+```
+
+
+## PCA for key-dependent coded 
+
+```{r}
+variable <- antivax_clean[which(colnames(antivax_clean) == "MMR_autism"):which(colnames(antivax_clean) == "Protect_immunocompromised")]
+```
+
+
+```{r}
+# PCA 
+results <- prcomp(variable,scale = TRUE)
+
+# R automatically returns the negative value. I apply -1 to get the original rotation value
+results$rotation <- -1*results$rotation
+results$rotation
+```
+
+```{r}
+# R automatically returns negative value of how much each observation can be described by each PCA. Thus, I multiple th result by -1 to get the original value.
+results$x <- -1*results$x
+```
+
+```{r}
+# check how much variation each PC captures
+# seems that PC1 and PC2 covers most 
+results$sdev^2 / sum(results$sdev^2)
+```
+
+```{r}
+
+#calculate total variance explained by each principal component
+var_explained = results$sdev^2 / sum(results$sdev^2)
+#create scree plot
+qplot(c(1:12), var_explained) + 
+  geom_line() + 
+  xlab("Principal Component") + 
+  ylab("Variance Explained") +
+  ggtitle("Scree Plot") +
+  ylim(0, 1)
+```
+
+```{r}
+# visualize the cluster of PCs
+plot_df = variable
+colnames(plot_df) = c(1:12)
+plot_re <- prcomp(plot_df, scale = TRUE)
+plot_re$rotation <- -1*plot_re$rotation
+plot_re$x <- -1*plot_re$x
+plot(plot_re, data = plot_df,
+         loadings = TRUE, loadings.colour = 'blue', loadings.label = TRUE, loadings.label.size = 4)
+```
+
+```{r}
+fact = factanal(variable,factors=2)
+fact
+```
+
+```{r}
+library(factoextra)
+fviz_pca_var(plot_re,
+             col.var = "contrib", # Color by contributions to the PC
+             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+             repel = TRUE     # Avoid text overlapping
+             )
+```
+
+
+## Chi squared test of independence
+
+```{r}
+table_hrs_vs_platform <- table(antivax_clean$Hours_use, antivax_clean$Social_media_used_most)
+table_hrs_vs_platform_with_margins <- addmargins(table_hrs_vs_platform)
+table_hrs_vs_platform_with_margins
+chisq.test(table_hrs_vs_platform, simulate.p.value = TRUE)
+```
+
+## Modeling 
+
+```{r}
+alpha(variable)
+```
+
+
+
+```{r}
+antivax_clean$score_sum <- rowSums(antivax_clean[c(which(colnames(antivax_clean) == "MMR_autism"):which(colnames(antivax_clean) == "Avoid_death"),25)]) # excluding data publicity, which PCA suggests dropping 
+```
+
+```{r}
+ggplot(antivax_clean) +
+  geom_histogram(aes(x = score_sum))
+```
+
+```{r}
+vax_mod <- lm(score_sum ~ Hours_use + SM_influence + Highest_Education + SES + Social_media_used_most + Age + Gender + Continent + Trust_most, data = antivax_clean)
+```
+
+```{r}
+summary(vax_mod)
+```
+
+```{r}
+antivax_clean <- antivax_clean %>%
+  mutate(hours_num = case_when(
+    Hours_use == "0-2" ~ 1,
+    Hours_use == "3-4" ~ 3.5,
+    Hours_use == "5-6" ~ 5.5,
+    Hours_use == "7-8" ~ 7.5,
+    Hours_use == "9+" ~ 10
+  ))
+# make trust_most numeric
+antivax_clean <- antivax_clean %>%
+  mutate(trust_doc_gov = 1 * (Trust_most == "Doctors") + 1 * (Trust_most == "The government"),
+         trust_other = 1 - trust_doc_gov
+)
+```
+
+```{r}
+vax_mod <- lm(score_sum ~ hours_num*SM_influence + Highest_Education + SES + Social_media_used_most + Age + Gender + trust_other, data = antivax_clean)
+```
+
+```{r}
+summary(vax_mod)
+```
+
+# Lasso
+
+```{r}
+# make categorical variables numeric
+antivax_clean_numeric <- antivax_clean %>% 
+  mutate(SM_influence_worse = 1 * (SM_influence == "Influenced_worse"), # baseline = Influenced_better
+         SM_influence_no_influence = 1 * (SM_influence == "No_influence"),
+         SM_influence_not_seen = 1 * (SM_influence == "Not_seen"),
+         Highest_Education_elementary_or_less = 1 * (Highest_Education == "Elementary_or_less"), # baseline = Associate_Degree
+         Highest_Education_high = 1 * (Highest_Education == "High_school"),
+         Highest_Education_bachelor = 1 * (Highest_Education == "Bachelor_Degree"),
+         Highest_Education_master = 1 * (Highest_Education == "Master_Degree"),
+         Highest_Education_professional = 1 * (Highest_Education == "Professional_Degree"),
+         SES_middle = 1 * (SES == "Middle Class"), # baseline = Lower Class
+         SES_upper = 1 * (SES == "Upper Class"),
+         Social_media_used_most_Instagram = 1 * (Social_media_used_most == "Instagram"), # baseline = Facebook
+         Social_media_used_most_Twitter = 1 * (Social_media_used_most == "Twitter"),
+         Social_media_used_most_other = 1 * (Social_media_used_most == "Other (please specify)"),
+         age = case_when(
+          Age == "18-24" ~ 20,
+          Age == "25-34" ~ 30,
+          Age == "35-44" ~ 40,
+          Age == "45-54" ~ 50,
+          Age == "55-64" ~ 60,
+          Age == "65+" ~ 70
+        ),
+        Gender_male = 1 * (Gender == "Male"), # baseline = Female
+        Gender_other = 1 * (Gender == "Other / Prefer not to answer")
+)
+# create interaction variables
+antivax_clean_numeric <- antivax_clean_numeric %>%
+  mutate(hours_sum_SM_worse = hours_num * SM_influence_worse,
+         hours_sum_SM_no_influence = hours_num * SM_influence_no_influence,
+         hours_sum_SM_not_seen = hours_num * SM_influence_not_seen
+)
+
+# Lasso
+library(glmnet)
+attach(antivax_clean_numeric)
+
+dependent_variable_vector <- score_sum
+independent_variables_matrix <- cbind(1, hours_num,
+                                      SM_influence_worse, SM_influence_no_influence, SM_influence_not_seen,
+                                      Highest_Education_elementary_or_less, Highest_Education_high,
+                                      Highest_Education_bachelor, Highest_Education_master, Highest_Education_professional,
+                                      SES_middle, SES_upper, 
+                                      Social_media_used_most_Instagram, Social_media_used_most_Twitter, Social_media_used_most_other,
+                                      age, Gender_male, Gender_other,
+                                      hours_sum_SM_worse, hours_sum_SM_no_influence, hours_sum_SM_not_seen,
+                                      trust_other
+                                )
+
+cvfit <- cv.glmnet(independent_variables_matrix, dependent_variable_vector)
+lambda.optimal <- cvfit$lambda.min
+glmnet(independent_variables_matrix, dependent_variable_vector, lambda = lambda.optimal, alpha = 1)$beta
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+

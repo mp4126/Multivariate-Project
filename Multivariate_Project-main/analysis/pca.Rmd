@@ -1,0 +1,234 @@
+---
+title: "pca"
+author: "Jean (Xuanjing) Chen"
+date: '2022-10-11'
+output: pdf_document
+---
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(ggfortify)
+library(dplyr)
+```
+```{r}
+# It is easier to do PCA with numerical values. Thus, I change "True" to 1, "False" to -1, and "Unsure" to 0
+# data cleaning to describe the original dataset
+
+df = read_csv("antivax_clean.csv")
+variable = df[,14:25]
+variable<-variable %>% mutate(MMR_autism = case_when(
+  MMR_autism =="True" ~ 1,
+  MMR_autism =="False" ~ -1,
+  MMR_autism == "Unsure" ~ 0,
+  ))
+
+variable<-variable %>% mutate(Disease_rare = case_when(
+  Disease_rare =="True" ~ 1,
+  Disease_rare =="False" ~ -1,
+  Disease_rare == "Unsure" ~ 0,
+  ))
+
+variable<-variable %>% mutate(Parents_decide = case_when(
+  Parents_decide =="True" ~ 1,
+  Parents_decide =="False" ~ -1,
+  Parents_decide == "Unsure" ~ 0,
+  ))
+
+variable<-variable %>% mutate(Neurological_problems = case_when(
+  Neurological_problems =="True" ~ 1,
+  Neurological_problems =="False" ~ -1,
+  Neurological_problems == "Unsure" ~ 0,
+  ))
+
+variable<-variable %>% mutate(Handle_multiple = case_when(
+  Handle_multiple =="True" ~ 1,
+  Handle_multiple =="False" ~ -1,
+  Handle_multiple == "Unsure" ~ 0,
+  ))
+
+variable<-variable %>% mutate(CDC_not_trustworthy = case_when(
+  CDC_not_trustworthy =="True" ~ 1,
+  CDC_not_trustworthy =="False" ~ -1,
+  CDC_not_trustworthy == "Unsure" ~ 0,
+  ))
+
+variable<-variable %>% mutate(Follow_recommendation = case_when(
+  Follow_recommendation =="True" ~ 1,
+  Follow_recommendation =="False" ~ -1,
+  Follow_recommendation == "Unsure" ~ 0,
+  ))
+
+variable<-variable %>% mutate(Vaccine_risk = case_when(
+  Vaccine_risk =="True" ~ 1,
+  Vaccine_risk =="False" ~ -1,
+  Vaccine_risk == "Unsure" ~ 0,
+  ))
+
+variable<-variable %>% mutate(Measles_efficacy = case_when(
+  Measles_efficacy =="True" ~ 1,
+  Measles_efficacy =="False" ~ -1,
+  Measles_efficacy == "Unsure" ~ 0,
+  ))
+
+variable<-variable %>% mutate(Avoid_death = case_when(
+  Avoid_death =="True" ~ 1,
+  Avoid_death =="False" ~ -1,
+  Avoid_death == "Unsure" ~ 0,
+  ))
+
+variable<-variable %>% mutate(Data_publicity = case_when(
+  Data_publicity =="True" ~ 1,
+  Data_publicity =="False" ~ -1,
+  Data_publicity == "Unsure" ~ 0,
+  ))
+
+variable<-variable %>% mutate(Protect_immunocompromised = case_when(
+  Protect_immunocompromised =="True" ~ 1,
+  Protect_immunocompromised =="False" ~ -1,
+  Protect_immunocompromised == "Unsure" ~ 0,
+  ))
+```
+
+
+
+```{r}
+# Description of each variable
+mean_array = colMeans(variable)
+sd_array = apply(variable,2,sd)
+Mean = mean_array
+Standard_Deviation = sd_array
+descriptive <- data.frame(Mean, Standard_Deviation)
+descriptive
+```
+
+```{r}
+# data cleaning to do the PCA (reference to the key: statement 1 ~ 6 is true, statement 7 ~ 12 is false)
+
+df = read_csv("antivax_clean.csv")
+variable = df[,14:25]
+variable<-variable %>% mutate(MMR_autism = case_when(
+  MMR_autism =="True" ~ 1,
+  MMR_autism =="False" ~ -1,
+  MMR_autism == "Unsure" ~ 0,
+  ))
+
+variable<-variable %>% mutate(Disease_rare = case_when(
+  Disease_rare =="True" ~ 1,
+  Disease_rare =="False" ~ -1,
+  Disease_rare == "Unsure" ~ 0,
+  ))
+
+variable<-variable %>% mutate(Parents_decide = case_when(
+  Parents_decide =="True" ~ 1,
+  Parents_decide =="False" ~ -1,
+  Parents_decide == "Unsure" ~ 0,
+  ))
+
+variable<-variable %>% mutate(Neurological_problems = case_when(
+  Neurological_problems =="True" ~ 1,
+  Neurological_problems =="False" ~ -1,
+  Neurological_problems == "Unsure" ~ 0,
+  ))
+
+variable<-variable %>% mutate(Handle_multiple = case_when(
+  Handle_multiple =="True" ~ 1,
+  Handle_multiple =="False" ~ -1,
+  Handle_multiple == "Unsure" ~ 0,
+  ))
+
+variable<-variable %>% mutate(CDC_not_trustworthy = case_when(
+  CDC_not_trustworthy =="True" ~ 1,
+  CDC_not_trustworthy =="False" ~ -1,
+  CDC_not_trustworthy == "Unsure" ~ 0,
+  ))
+
+variable<-variable %>% mutate(Follow_recommendation = case_when(
+  Follow_recommendation =="True" ~ -1,
+  Follow_recommendation =="False" ~ 1,
+  Follow_recommendation == "Unsure" ~ 0,
+  ))
+
+variable<-variable %>% mutate(Vaccine_risk = case_when(
+  Vaccine_risk =="True" ~ -1,
+  Vaccine_risk =="False" ~ 1,
+  Vaccine_risk == "Unsure" ~ 0,
+  ))
+
+variable<-variable %>% mutate(Measles_efficacy = case_when(
+  Measles_efficacy =="True" ~ -1,
+  Measles_efficacy =="False" ~ 1,
+  Measles_efficacy == "Unsure" ~ 0,
+  ))
+
+variable<-variable %>% mutate(Avoid_death = case_when(
+  Avoid_death =="True" ~ -1,
+  Avoid_death =="False" ~ 1,
+  Avoid_death == "Unsure" ~ 0,
+  ))
+
+variable<-variable %>% mutate(Data_publicity = case_when(
+  Data_publicity =="True" ~ -1,
+  Data_publicity =="False" ~ 1,
+  Data_publicity == "Unsure" ~ 0,
+  ))
+
+variable<-variable %>% mutate(Protect_immunocompromised = case_when(
+  Protect_immunocompromised =="True" ~ -1,
+  Protect_immunocompromised =="False" ~ 1,
+  Protect_immunocompromised == "Unsure" ~ 0,
+  ))
+```
+
+```{r}
+# PCA 
+results <- prcomp(variable,scale = TRUE)
+
+# R automatically returns the negative value. I apply -1 to get the original rotation value
+results$rotation <- -1*results$rotation
+results$rotation
+```
+
+```{r}
+# R automatically returns negative value of how much each observation can be described by each PCA. Thus, I multiple th result by -1 to get the original value.
+results$x <- -1*results$x
+```
+
+```{r}
+# check how much variation each PC captures
+# seems that PC1 and PC2 covers most 
+results$sdev^2 / sum(results$sdev^2)
+```
+
+```{r}
+
+#calculate total variance explained by each principal component
+var_explained = results$sdev^2 / sum(results$sdev^2)
+#create scree plot
+qplot(c(1:12), var_explained) + 
+  geom_line() + 
+  xlab("Principal Component") + 
+  ylab("Variance Explained") +
+  ggtitle("Scree Plot") +
+  ylim(0, 1)
+```
+
+```{r}
+# visualize the cluster of PCs
+plot_df = variable
+colnames(plot_df) = c(1:12)
+plot_re <- prcomp(plot_df, scale = TRUE)
+plot_re$rotation <- -1*plot_re$rotation
+plot_re$x <- -1*plot_re$x
+autoplot(plot_re, data = plot_df,
+         loadings = TRUE, loadings.colour = 'blue', loadings.label = TRUE, loadings.label.size = 4)
+```
+
+```{r}
+# 2 factor testing
+fact = factanal(variable,factors=2)
+```
+
+
+
+

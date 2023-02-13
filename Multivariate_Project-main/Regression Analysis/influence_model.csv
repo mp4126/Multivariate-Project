@@ -1,0 +1,78 @@
+Perception of social media influence moderates the effect of social media use on vaccine knowledge,,,
+,(1),(2),(3)
+,Effect Model,Social Media Control,Demographic Controls
+,,,
+Hours on Social Media,0.215***,0.212***,0.255***
+,(0.0546),(0.0551),(0.0558)
+,,,
+Bias Perception: Better,2.135***,2.155***,2.048***
+,(0.483),(0.483),(0.477)
+,,,
+Bias Perception: Worse,-12.67***,-12.66***,-12.18***
+,(0.754),(0.754),(0.745)
+,,,
+Bias Perception: Better*Hours,-0.354**,-0.370**,-0.318*
+,(0.135),(0.135),(0.134)
+,,,
+Bias Perception: Worse*Hours,-0.124,-0.115,-0.179
+,(0.246),(0.246),(0.243)
+,,,
+Facebook,,0,0
+,,(.),(.)
+,,,
+Instagram,,-0.389,-0.585*
+,,(0.275),(0.282)
+,,,
+Other (please specify),,-0.140,-0.0476
+,,(0.708),(0.704)
+,,,
+Twitter,,0.498*,0.275
+,,(0.247),(0.249)
+,,,
+Female,,,0
+,,,(.)
+,,,
+Male,,,0.504*
+,,,(0.232)
+,,,
+Other / Prefer not to answer,,,-0.283
+,,,(0.830)
+,,,
+Associate_Degree,,,0
+,,,(.)
+,,,
+Bachelor_Degree,,,0.988***
+,,,(0.239)
+,,,
+Elementary_or_less,,,-2.751*
+,,,(1.231)
+,,,
+High_school,,,-0.205
+,,,(0.272)
+,,,
+Master_Degree,,,1.420***
+,,,(0.301)
+,,,
+Professional_Degree,,,2.448***
+,,,(0.374)
+,,,
+Lower Class,,,0
+,,,(.)
+,,,
+Middle Class,,,-0.248
+,,,(0.303)
+,,,
+Upper Class,,,-0.672
+,,,(0.435)
+,,,
+age_num,,,-0.0207**
+,,,(0.00748)
+,,,
+Constant,18.58***,18.56***,18.74***
+,(0.171),(0.175),(0.482)
+,,,
+Observations,2304,2304,2304
+Adjusted R-squared,0.345,0.346,0.367
+Note: Participants who have not seen any post related to vaccine usage are excluded from the regressions. Bias Perception dummies encode participant's subject perception of whether their judgement about vaccine is positively or negatively biased by social media posts. No bias perception is excluded as baseline group. Social media dummies encode participants' favorate social media. Facebook is excluded as the baseline most preferred social media.,,,
+"* p<0.05  ** p<0.01  *** p<0.001""",,,
+,,,
